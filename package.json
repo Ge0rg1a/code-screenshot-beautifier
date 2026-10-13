@@ -1,0 +1,99 @@
+{
+  "name": "code-screenshot-beautifier",
+  "displayName": "Code Screenshot Beautifier",
+  "description": "选中代码片段，生成带语法高亮、背景、水印的精美图片（Carbon 离线版）",
+  "version": "0.0.1",
+  "publisher": "your-publisher",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": ["Other"],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "codeShot.captureSelection",
+        "title": "Code Shot: 生成截图"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "codeShot.captureSelection",
+          "when": "editorHasSelection",
+          "group": "1_screenshot@1"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "codeShot.captureSelection",
+          "when": "editorHasSelection"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Code Shot",
+      "properties": {
+        "codeShot.theme": {
+          "type": "string",
+          "default": "github-dark",
+          "enum": ["github-dark", "dracula", "monokai", "nord", "one-dark-pro"],
+          "description": "语法高亮主题"
+        },
+        "codeShot.fontFamily": {
+          "type": "string",
+          "default": "Fira Code",
+          "description": "字体名称"
+        },
+        "codeShot.fontSize": {
+          "type": "number",
+          "default": 14,
+          "description": "字号"
+        },
+        "codeShot.background": {
+          "type": "string",
+          "default": "gradient-1",
+          "description": "背景预设 ID"
+        },
+        "codeShot.windowStyle": {
+          "type": "string",
+          "default": "macos",
+          "enum": ["macos", "none", "dark"],
+          "description": "窗口样式"
+        },
+        "codeShot.showLineNumbers": {
+          "type": "boolean",
+          "default": true,
+          "description": "显示行号"
+        },
+        "codeShot.padding": {
+          "type": "number",
+          "default": 32,
+          "description": "内边距 (px)"
+        },
+        "codeShot.watermark": {
+          "type": "string",
+          "default": "",
+          "description": "水印文字（留空则不显示）"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./ && node esbuild.mjs",
+    "watch": "tsc -watch -p ./",
+    "build:webview": "node esbuild.mjs",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "@types/vscode": "^1.80.0",
+    "esbuild": "^0.20.0",
+    "typescript": "^5.4.0"
+  },
+  "dependencies": {
+    "shiki": "^1.6.0",
+    "html2canvas": "^1.4.1"
+  }
+}

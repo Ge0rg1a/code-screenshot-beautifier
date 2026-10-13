@@ -1,0 +1,6 @@
+node_modules/
+out/
+resources/webview.js
+*.vsix
+.DS_Store
+*.log
