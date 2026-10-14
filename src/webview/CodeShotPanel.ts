@@ -1,4 +1,8 @@
 import * as vscode from 'vscode'
+import * as path from 'path'
+import * as os from 'os'
+import * as fs from 'fs'
+import { execSync } from 'child_process'
 import { THEMES, BACKGROUNDS, FONTS } from '../config/themes'
 
 export interface ShotData {
@@ -40,6 +44,20 @@ export class CodeShotPanel {
           const buffer = Buffer.from(base64, 'base64')
           await vscode.workspace.fs.writeFile(uri, new Uint8Array(buffer))
           vscode.window.showInformationMessage(`截图已保存: ${uri.fsPath}`)
+        }
+      } else if (msg.type === 'copyClipboard') {
+        try {
+          const base64 = msg.data.replace(/^data:image\/png;base64,/, '')
+          const buffer = Buffer.from(base64, 'base64')
+          const tmpPath = path.join(os.tmpdir(), `codeshot-${Date.now()}.png`)
+          fs.writeFileSync(tmpPath, buffer)
+          const safePath = tmpPath.replace(/\\/g, '\\\\')
+          const psScript = `Add-Type -AssemblyName System.Windows.Forms; Add-Type -AssemblyName System.Drawing; $img = [System.Drawing.Image]::FromFile('${safePath}'); [System.Windows.Forms.Clipboard]::SetImage($img); $img.Dispose()`
+          execSync(`powershell -NoProfile -NonInteractive -Command "${psScript}"`)
+          fs.unlinkSync(tmpPath)
+          vscode.window.showInformationMessage('已复制到剪贴板')
+        } catch (e) {
+          vscode.window.showErrorMessage('复制失败: ' + (e as Error).message)
         }
       }
     })
@@ -91,13 +109,16 @@ export class CodeShotPanel {
   .ctrl-group select:focus, .ctrl-group input:focus { border-color: #89b4fa; }
   .ctrl-group label.checkbox-label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
   .ctrl-group input[type="checkbox"] { accent-color: #89b4fa; }
-  #export-btn {
-    width: 100%; padding: 10px; background: #89b4fa; color: #1e1e2e;
-    border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 13px;
-    margin-top: 8px; transition: background 0.15s;
+  #export-btn, #copy-btn {
+    flex: 1; padding: 10px; border: none; border-radius: 4px; cursor: pointer;
+    font-weight: bold; font-size: 13px; transition: background 0.15s;
   }
+  #export-btn { background: #89b4fa; color: #1e1e2e; }
   #export-btn:hover { background: #74c7ec; }
-  #export-btn:disabled { background: #45475a; color: #a6adc8; cursor: not-allowed; }
+  #copy-btn { background: #a6e3a1; color: #1e1e2e; }
+  #copy-btn:hover { background: #94d488; }
+  #export-btn:disabled, #copy-btn:disabled { background: #45475a; color: #a6adc8; cursor: not-allowed; }
+  .btn-row { display: flex; gap: 8px; margin-top: 8px; }
   .shot-container { border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.4); display: inline-block; position: relative; }
   .shot-window { border-radius: 8px; overflow: hidden; }
   .window-buttons { padding: 10px 14px; display: flex; gap: 8px; background: rgba(0,0,0,0.12); }
@@ -151,7 +172,10 @@ export class CodeShotPanel {
   <div class="ctrl-group">
     <label class="checkbox-label"><input type="checkbox" id="line-numbers-input" checked> 显示行号</label>
   </div>
-  <button id="export-btn">导出 PNG</button>
+  <div class="btn-row">
+    <button id="export-btn">导出 PNG</button>
+    <button id="copy-btn">复制到剪贴板</button>
+  </div>
 </div>
 <script nonce="${nonce}">
   const VS_CODE_SETTINGS = ${JSON.stringify(settings)};

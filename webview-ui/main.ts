@@ -245,6 +245,9 @@ function bindEvents(): void {
 
   const exportBtn = document.getElementById('export-btn') as HTMLButtonElement
   exportBtn.addEventListener('click', exportPng)
+
+  const copyBtn = document.getElementById('copy-btn') as HTMLButtonElement
+  copyBtn.addEventListener('click', copyToClipboard)
 }
 
 async function exportPng(): Promise<void> {
@@ -273,6 +276,35 @@ async function exportPng(): Promise<void> {
   } finally {
     exportBtn.textContent = '导出 PNG'
     exportBtn.disabled = false
+  }
+}
+
+async function copyToClipboard(): Promise<void> {
+  const target = document.querySelector('.shot-container') as HTMLElement | null
+  if (!target) {
+    alert('预览内容未加载，请确认高亮引擎初始化成功后再试')
+    return
+  }
+
+  const copyBtn = document.getElementById('copy-btn') as HTMLButtonElement
+  copyBtn.textContent = '复制中...'
+  copyBtn.disabled = true
+
+  try {
+    const canvas = await html2canvas(target, {
+      scale: 2,
+      backgroundColor: null,
+      useCORS: true,
+      logging: false,
+    })
+    const dataUrl = canvas.toDataURL('image/png')
+    vscodeApi.postMessage({ type: 'copyClipboard', data: dataUrl })
+  } catch (e) {
+    console.error('复制失败', e)
+    alert('复制失败: ' + (e as Error).message)
+  } finally {
+    copyBtn.textContent = '复制到剪贴板'
+    copyBtn.disabled = false
   }
 }
 
